@@ -44,6 +44,16 @@ def get_surrounding_mines(grid: Grid, row: int, col: int) -> int:
     return sum(1 for pos in positions if grid[pos[1]][pos[0]].has_mine)
 
 
+def get_number_of_surrounding_flags(grid: Grid, row: int, col: int) -> int:
+    positions = get_surrounding_positions(grid=grid, row=row, col=col)
+    return sum(1 for pos in positions if grid[pos[1]][pos[0]].is_flagged)
+
+
+def get_number_of_surrounding_unopened_slots(grid: Grid, row: int, col: int) -> int:
+    positions = get_surrounding_positions(grid=grid, row=row, col=col)
+    return sum(1 for pos in positions if not grid[pos[1]][pos[0]].is_opened)
+
+
 def get_surrounding_slots(grid: Grid, row: int, col: int) -> Sequence[Slot]:
     positions = get_surrounding_positions(grid=grid, row=row, col=col)
     return [grid[pos[1]][pos[0]] for pos in positions]

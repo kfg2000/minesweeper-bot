@@ -2,6 +2,9 @@ from enum import IntEnum
 
 from game import Game, GameState
 from helper import (
+    get_number_of_surrounding_flags,
+    get_number_of_surrounding_unopened_slots,
+    get_surrounding_slots,
     get_unopened_slots,
     is_slot_unconstrained,
     risk_score_heuristic,
@@ -16,6 +19,53 @@ class MoveType(IntEnum):
 
 class PlayerAlgo:
     last_move_played = None
+
+    @staticmethod
+    def __make_simple_logical_move(game: Game) -> bool:
+        for col in range(len(game.grid)):
+            for row in range(len(game.grid[0])):
+                current_slot = game.grid[col][row]
+                if not current_slot.is_opened:
+                    continue
+
+                number_of_surrounding_flags = get_number_of_surrounding_flags(
+                    grid=game.grid, row=row, col=col
+                )
+
+                number_of_surrounding_unopened_slots = (
+                    get_number_of_surrounding_unopened_slots(
+                        grid=game.grid, row=row, col=col
+                    )
+                )
+
+                if number_of_surrounding_flags == number_of_surrounding_unopened_slots:
+                    continue
+
+                surrounding_slots = get_surrounding_slots(
+                    grid=game.grid, row=row, col=col
+                )
+
+                only_mines_unopened = (
+                    current_slot.number_of_mines_around
+                    == number_of_surrounding_unopened_slots
+                )
+                if only_mines_unopened:
+                    for slot in surrounding_slots:
+                        if not slot.is_opened and not slot.is_flagged:
+                            slot.is_flagged = True
+                    PlayerAlgo.last_move_played = MoveType.simple
+                    return True
+
+                all_mines_flagged = (
+                    current_slot.number_of_mines_around == number_of_surrounding_flags
+                )
+                if all_mines_flagged:
+                    for slot in surrounding_slots:
+                        if not slot.is_opened and not slot.is_flagged:
+                            game.open_slot(row=slot.row, col=slot.col)
+                    PlayerAlgo.last_move_played = MoveType.simple
+                    return True
+        return False
 
     @staticmethod
     def __make_random_move(game: Game) -> None:
@@ -59,4 +109,8 @@ class PlayerAlgo:
 
     @staticmethod
     def make_a_move(game: Game) -> None:
+        while game.state in [GameState.IN_PROGRESS, GameState.UNSTARTED] and (
+            PlayerAlgo.__make_simple_logical_move(game)
+        ):
+            pass
         PlayerAlgo.__make_random_move(game=game)
